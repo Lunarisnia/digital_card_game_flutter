@@ -257,11 +257,22 @@ class BackCard extends StatelessWidget {
                         : Icons.question_mark,
                     color: Colors.pink.shade100,
                     size: 200),
-                Text(
-                  cardType == "activities"
-                      ? "-- ACTIVITIES --"
-                      : "-- QUESTION --",
-                  style: const TextStyle(color: Colors.white),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.network(
+                      "https://s3-ap-northeast-1.amazonaws.com/celclipcommonprod/accounts/profile-image/3d/986e82bb76b33ba93456307d0f0aae430e2a9ca43e5cb63600cfbc68b03aae08.png",
+                      scale: 5,
+                    ),
+                    Text(
+                      cardType == "activities" ? " ACTIVITIES " : " QUESTION ",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    Image.network(
+                      "https://s3-ap-northeast-1.amazonaws.com/celclipcommonprod/accounts/profile-image/3d/986e82bb76b33ba93456307d0f0aae430e2a9ca43e5cb63600cfbc68b03aae08.png",
+                      scale: 5,
+                    ),
+                  ],
                 )
               ],
             ),
