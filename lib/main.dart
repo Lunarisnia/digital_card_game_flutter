@@ -3,7 +3,6 @@
 import 'dart:math';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -54,12 +53,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final String apiUrl = 'http://10.1.48.72:3000';
   Future<Map<String, dynamic>> fetchCardCount() async {
     Response response;
     final dio = Dio();
     // Optionally the request above could also be done as
-    response = await dio.get('http://192.168.0.109:3000/card/count');
-    print(response.data.toString());
+    response = await dio.get('$apiUrl/card/count');
+    // print(response.data.toString());
     return response.data;
   }
 
@@ -68,8 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
     Response response;
     final dio = Dio();
     // Optionally the request above could also be done as
-    response = await dio.get('http://192.168.0.109:3000/card/draw?gender=m');
-    print(response.data.toString());
+    response = await dio.get('$apiUrl/card/draw?gender=m');
+    // print(response.data.toString());
     displayDrawnCard(response.data);
     return response.data;
   }
@@ -98,9 +98,11 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
             BackCardSF(
-              cardType: cardType,
-              cardDesc: cardDesc,
-            ),
+                cardType: cardType,
+                cardDesc: cardDesc,
+                callback: () {
+                  drawCard();
+                }),
             // FutureBuilder(
             //   builder: (BuildContext ctx,
             //       AsyncSnapshot<Map<String, dynamic>> snapshot) {
@@ -135,9 +137,14 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class BackCardSF extends StatefulWidget {
-  const BackCardSF({super.key, required this.cardType, required this.cardDesc});
+  const BackCardSF(
+      {super.key,
+      required this.cardType,
+      required this.cardDesc,
+      required this.callback});
   final String cardType;
   final String cardDesc;
+  final Function callback;
 
   @override
   State<BackCardSF> createState() => _BackCardSFState();
@@ -145,13 +152,18 @@ class BackCardSF extends StatefulWidget {
 
 class _BackCardSFState extends State<BackCardSF> with TickerProviderStateMixin {
   late AnimationController _controller;
+  late AnimationController _controller_2;
   late Animation _animation;
+  // late Animation _animation_2;
   AnimationStatus _status = AnimationStatus.dismissed;
+  // AnimationStatus _status_2 = AnimationStatus.dismissed;
 
   @override
   void initState() {
     super.initState();
     _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    _controller_2 =
         AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _animation = Tween(end: 2.0, begin: 0.0).animate(_controller)
       ..addListener(() {
@@ -160,27 +172,59 @@ class _BackCardSFState extends State<BackCardSF> with TickerProviderStateMixin {
       ..addStatusListener((status) {
         _status = status;
       });
+
+    // _animation_2 = Tween(end: 1.0, begin: 0.0).animate(_controller_2)
+    //   ..addListener(() {
+    //     setState(() {});
+    //   })
+    //   ..addStatusListener((status) {
+    //     _status_2 = status;
+    //   });
   }
 
   @override
   Widget build(BuildContext context) {
     return Transform(
-        alignment: FractionalOffset.center,
-        transform: Matrix4.identity()
-          ..setEntry(3, 2, 0.0015)
-          ..rotateY(pi * _animation.value),
-        child: _animation.value <= 0.5
-            ? BackCard(
-                cardType: widget.cardType,
-                callback: () {
-                  if (_status == AnimationStatus.dismissed) {
-                    _controller.forward();
-                  }
-                },
-              )
-            : FrontCard(
-                description: widget.cardDesc,
-              ));
+      alignment: FractionalOffset.center,
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.0015)
+        ..rotateY(pi * _animation.value),
+      // ..rotateX(pi * _animation.value)..translate(pi * _animation.value*200,pi * _animation.value*-200,2)
+      // this can make a good card out animation
+      child: _animation.value <= 0.5
+          ? BackCard(
+              cardType: widget.cardType,
+              callback: () {
+                if (_status == AnimationStatus.dismissed) {
+                  _controller.forward();
+                }
+              },
+            )
+          : FrontCard(
+              description: widget.cardDesc,
+              callback: () {
+                if (_status == AnimationStatus.completed) {
+                  widget.callback();
+                  _controller.reset();
+                }
+              },
+            ),
+      // : Transform(
+      //     transform: Matrix4.identity()
+      //       ..setEntry(3, 2, 0.0015)
+      //       ..rotateX(pi * _animation_2.value)
+      //       ..translate(pi * _animation_2.value * 200,
+      //           pi * _animation_2.value * -200, 2),
+      //     child: FrontCard(
+      //       description: widget.cardDesc,
+      //       callback: () {
+      //         if (_status_2 == AnimationStatus.dismissed) {
+      //           _controller_2.forward();
+      //         }
+      //       },
+      //     ),
+      //   ),
+    );
   }
 }
 
@@ -189,15 +233,14 @@ class BackCard extends StatelessWidget {
 
   final String cardType;
   final Function callback;
-  // Todo: Implement proper back card with different color between activities
-  // And Question
 
-  // Todo: Implement draw new card animation
-  // Todo: Implement handling if card is all out
+  // Todo: Implement login page and query for male or female
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.indigo.shade900,
+      color: cardType == 'activities'
+          ? Colors.purple.shade900
+          : Colors.cyan.shade900,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50.0)),
       child: InkWell(
         onTap: () => callback(),
@@ -208,9 +251,16 @@ class BackCard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
-                Icon(Icons.favorite, color: Colors.pink.shade100, size: 200),
+                Icon(
+                    cardType == "activities"
+                        ? Icons.favorite
+                        : Icons.question_mark,
+                    color: Colors.pink.shade100,
+                    size: 200),
                 Text(
-                  cardType,
+                  cardType == "activities"
+                      ? "-- ACTIVITIES --"
+                      : "-- QUESTION --",
                   style: const TextStyle(color: Colors.white),
                 )
               ],
@@ -223,55 +273,60 @@ class BackCard extends StatelessWidget {
 }
 
 class FrontCard extends StatelessWidget {
-  const FrontCard({super.key, required this.description});
+  const FrontCard(
+      {super.key, required this.description, required this.callback});
 
   final String description;
+  final Function callback;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       color: Colors.blue,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50.0)),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height - 250,
-        width: MediaQuery.of(context).size.width - 50,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              Icon(Icons.favorite, color: Colors.pink.shade100),
-              const Divider(
-                color: Colors.white,
-                endIndent: 30,
-                indent: 30,
-              ),
-              SizedBox(
-                // height: 150,
-                width: 300,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        description,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 20.0, color: Colors.white),
-                      ),
-                    ],
+      child: InkWell(
+        onDoubleTap: () => callback(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height - 250,
+          width: MediaQuery.of(context).size.width - 50,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[
+                Icon(Icons.favorite, color: Colors.pink.shade100),
+                const Divider(
+                  color: Colors.white,
+                  endIndent: 30,
+                  indent: 30,
+                ),
+                SizedBox(
+                  // height: 150,
+                  width: 300,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          description,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 20.0, color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const Divider(
-                color: Colors.white,
-                endIndent: 30,
-                indent: 30,
-              ),
-              const Text(
-                "- BEDROOM COMMAND -",
-                style: TextStyle(color: Colors.white),
-              )
-            ],
+                const Divider(
+                  color: Colors.white,
+                  endIndent: 30,
+                  indent: 30,
+                ),
+                const Text(
+                  "- BEDROOM COMMAND -",
+                  style: TextStyle(color: Colors.white),
+                )
+              ],
+            ),
           ),
         ),
       ),
