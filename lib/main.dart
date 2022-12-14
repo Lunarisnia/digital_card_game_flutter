@@ -29,7 +29,68 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const LoginPage(),
+    );
+  }
+}
+
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    late String password;
+    return Scaffold(
+      backgroundColor: Colors.blueGrey.shade900,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            SizedBox(
+              height: 300,
+              width: 250,
+              child: Card(
+                color: Colors.cyan.shade700,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    const Text(
+                      "Enter the password",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    SizedBox(
+                      width: 200,
+                      child: TextField(
+                        onChanged: (value) => {password = value},
+                        decoration: const InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        if (password == "lopelopetania") {
+                          Navigator.of(context)
+                              .pushReplacement(MaterialPageRoute(
+                            builder: (BuildContext context) =>
+                                const MyHomePage(title: "My Home Page"),
+                          ));
+                        }
+                      },
+                      child: const Text(
+                        "LOGIN",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -53,7 +114,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String apiUrl = 'http://10.1.48.72:3000';
+  final String apiUrl = 'http://192.168.0.109:3000';
   Future<Map<String, dynamic>> fetchCardCount() async {
     Response response;
     final dio = Dio();
